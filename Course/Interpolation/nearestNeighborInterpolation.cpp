@@ -1,6 +1,7 @@
 #include<iostream>
 #include<vector>
 #include<cmath>
+#include "../Mytool.h"
 
 // two-dimensional image
 using Image = std::vector<std::vector<int>>;
@@ -31,21 +32,18 @@ Image nearestNeighborInterpolation(const Image& original, int newRows, int newCo
 
 int main(){
     Image original = {
-        {1, 2, 3},
-        {4, 5, 6},
-        {7, 8, 9}};
+        {1, 2, 3, 6, 7},
+        {4, 5, 6, 1, 2},
+        {7, 8, 9, 3, 2},
+        {1, 2, 3, 4, 5},
+        {6, 7, 8, 9, 1}};
 
-    int newRows = 6;
-    int newCols = 6;
+    int newRows = 10;
+    int newCols = 10;
     
     Image newImage = nearestNeighborInterpolation(original, newRows, newCols);
 
-    for(const auto& row : newImage){
-        for(const auto& val : row){
-            std::cout << val << " ";
-        }
-        std::cout << std::endl;
-    }
+    PrintImage(newImage);
 
     return 0;
 

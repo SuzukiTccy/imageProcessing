@@ -1,6 +1,8 @@
 #include<iostream>
 #include<vector>
 #include<algorithm>
+#include<cmath>
+#include "../Mytool.h"
 
 // two-dimensional image
 using Image = std::vector<std::vector<int>>;
@@ -35,7 +37,7 @@ Image histogramEqualization(const Image& image, int L){
     
     std::vector<float> cdf_norm(L, 0);
     for(int i = 0; i < L; ++i){
-        cdf_norm[i] = (cdf[i] - cdfmin) / (L - cdfmin);
+        cdf_norm[i] = static_cast<float>(cdf[i] - cdfmin) / (L - cdfmin);
     }
 
     // calculate new image value
@@ -54,22 +56,17 @@ Image histogramEqualization(const Image& image, int L){
 
 int main(){
     // example
-    Image image = {{0, 0, 0, 1},
-                   {1, 1, 1, 2},
-                   {2, 2, 2, 3},
-                   {3, 3, 3, 4}};
+    Image image = {{0, 34, 125, 1},
+                   {1, 43, 125, 2},
+                   {2, 53, 250, 3},
+                   {3, 63, 250, 4}};
     
     int L = 256;
 
     // histogram equalization
     Image equalized_image = histogramEqualization(image, L);
-    
-    for(const auto& row : equalized_image){
-        for(const auto& pixel : row){
-            std::cout << pixel << " ";
-        }
-        std::cout << std::endl;
-    }
+
+    PrintImage(equalized_image);
 
     return 1;
 }
