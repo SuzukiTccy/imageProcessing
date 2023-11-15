@@ -10,8 +10,8 @@ Image bilinearInterpolation(const Image& original, int newRows, int newCols) {
     int oldRows = original.size();
     int oldCols = original[0].size();
 
-    float rowScale = static_cast<float>(oldRows - 1) / (newRows - 1);
-    float colScale = static_cast<float>(oldCols - 1) / (newCols - 1);
+    float rowScale = static_cast<float>(oldRows) / newRows;
+    float colScale = static_cast<float>(oldCols) / newCols;
 
     Image newImage(newRows, std::vector<int>(newCols, 0));
 
