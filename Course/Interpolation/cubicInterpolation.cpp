@@ -92,7 +92,9 @@ int main() {
     
     Image newImage = bicubicInterpolation(original, newRows, newCols);
 
-    PrintImage(newImage);
+    int pixel_round = 10;
+
+    PrintImage(newImage, pixel_round);
 
     return 0;
 }
