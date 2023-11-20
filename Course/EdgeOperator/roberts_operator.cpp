@@ -21,11 +21,11 @@ Image applyRobertsOperator(const Image& original) {
     for (int i = 0; i < rows - 1; ++i) {
         for (int j = 0; j < cols - 1; ++j) {
             // Apply the Roberts cross operator.
-            gx = std::abs(original[i][j] - original[i + 1][j + 1]);
-            gy = std::abs(original[i][j + 1] - original[i + 1][j]);
+            gx = std::abs(original[i][j] - original[i][j+1]);
+            gy = std::abs(original[i][j] - original[i + 1][j]);
 
             // Combine the gradients.
-            edges[i][j] = gx + gy;
+            edges[i][j] = sqrt(gx * gx + gy * gy);
         }
     }
 
