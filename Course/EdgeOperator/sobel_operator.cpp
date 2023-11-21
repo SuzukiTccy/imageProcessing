@@ -23,14 +23,14 @@ Image applySobelOperator(const Image& original) {
     // Sobel operator kernels for x and y directions
     const std::vector<std::vector<int>> sobelY = {
         {-1, 0, 1},
-        {-1, 0, 1},
+        {-2, 0, 2},
         {-1, 0, 1}
     };
 
     const std::vector<std::vector<int>> sobelX = {
-        {-1, -1, -1},
+        {-1, -2, -1},
         { 0,  0,  0},
-        { 1,  1,  1}
+        { 1,  2,  1}
     };
 
     for(int x = 1; x < size - 1; ++x) {
