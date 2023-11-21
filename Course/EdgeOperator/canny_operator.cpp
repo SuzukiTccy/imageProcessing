@@ -2,8 +2,7 @@
 #include<vector>
 #include<cmath>
 #include<string>
-#include "../Mytool.h"  // Assuming this header contains necessary image processing functions
-#include <corecrt_math_defines.h>
+#include "../Mytool.h"
 
 using Image = std::vector<std::vector<int>>;
 
@@ -83,7 +82,7 @@ void computeGradients(const Image& image, Image& gradientMagnitude, Image& gradi
 
             // Calculate gradient magnitude and direction
             gradientMagnitude[x][y] = std::sqrt(gx * gx + gy * gy);
-            gradientDirection[x][y] = std::atan2(gy, gx) * 180 / M_PI; // Convert to degrees
+            gradientDirection[x][y] = std::atan2(gy, gx); // radians
         }
     }
 }
@@ -113,29 +112,31 @@ Image nonMaximumSuppression(const Image& gradientMagnitude, const Image& gradien
 
     Image result(rows, std::vector<int>(cols, 0));
 
-    for (int i = 1; i < rows - 1; ++i) {
-        for (int j = 1; j < cols - 1; ++j) {
+    if(mode == "nearest"){
+        for (int i = 1; i < rows - 1; ++i) {
+            for (int j = 1; j < cols - 1; ++j) {
             int q = 255, r = 255;
-            float angle = gradientDirection[i][j] * M_PI / 180.0; // Convert to radians
+            float angle = gradientDirection[i][j]; // radians
 
             // Find the two adjacent pixels to inspect
-            if ((angle >= 0 && angle < M_PI / 8) || (angle >= 7 * M_PI / 8 && angle <= M_PI)) {
+            if ((angle >= -M_PI / 8 && angle <= M_PI / 8) || (angle >= 7 * M_PI / 8 || angle <= -7 * M_PI / 8)) {
                 // Horizontal edge
                 q = gradientMagnitude[i][j + 1];
                 r = gradientMagnitude[i][j - 1];
-            } else if (angle >= M_PI / 8 && angle < 3 * M_PI / 8) {
-                // Diagonal (bottom left to top right)
+            } else if ((angle > M_PI / 8 && angle < 3 * M_PI / 8) || (angle > -7 * M_PI / 8 && angle < -5 * M_PI / 8)) {
+                // Diagonal (top right to bottom left)
                 q = gradientMagnitude[i + 1][j - 1];
                 r = gradientMagnitude[i - 1][j + 1];
-            } else if (angle >= 3 * M_PI / 8 && angle < 5 * M_PI / 8) {
+            } else if ((angle >= 3 * M_PI / 8 && angle <= 5 * M_PI / 8) || (angle >= -5 * M_PI / 8 && angle <= -3 * M_PI / 8)) {
                 // Vertical edge
                 q = gradientMagnitude[i + 1][j];
                 r = gradientMagnitude[i - 1][j];
-            } else if (angle >= 5 * M_PI / 8 && angle < 7 * M_PI / 8) {
+            } else if ((angle > 5 * M_PI / 8 && angle < 7 * M_PI / 8) || (angle > -3 * M_PI / 8 && angle < -M_PI / 8)) {
                 // Diagonal (top left to bottom right)
                 q = gradientMagnitude[i - 1][j - 1];
                 r = gradientMagnitude[i + 1][j + 1];
             }
+
 
             // Suppress non-maximum values
             if (gradientMagnitude[i][j] >= q && gradientMagnitude[i][j] >= r) {
@@ -143,24 +144,114 @@ Image nonMaximumSuppression(const Image& gradientMagnitude, const Image& gradien
             } else {
                 result[i][j] = 0;
             }
+            }
         }
     }
+    else{
+        for (int i = 1; i < rows - 1; ++i) {
+            for (int j = 1; j < cols - 1; ++j) {
+                float angle = gradientDirection[i][j];
+                float q = 255, r = 255;
 
+                // Calculate coordinates of pixels in gradient direction
+                float x0 = i + cos(angle);  //Polar to Cartesian conversion
+                float y0 = j + sin(angle);
+                float x1 = i - cos(angle);
+                float y1 = j - sin(angle);
+
+                // Perform bilinear interpolation
+                if (x0 >= 0 && x0 < rows && y0 >= 0 && y0 < cols) {
+                    q = bilinearInterpolate(gradientMagnitude, x0, y0);
+                }
+                if (x1 >= 0 && x1 < rows && y1 >= 0 && y1 < cols) {
+                    r = bilinearInterpolate(gradientMagnitude, x1, y1);
+                }
+
+                // Suppress non-maximum values
+                if (gradientMagnitude[i][j] >= q && gradientMagnitude[i][j] >= r) {
+                    result[i][j] = gradientMagnitude[i][j];
+                } else {
+                    result[i][j] = 0;
+                }
+            }
+        }
+    }
     return result;
 }
 
 // Function for double thresholding
 Image doubleThresholding(const Image& image, int lowThreshold, int highThreshold) {
     // Implement double thresholding
-    // This is a placeholder implementation
-    return image;
+    const int rows = image.size();
+    const int cols = image[0].size();
+    Image result(rows, std::vector<int>(cols, 0));
+
+    // Iterate through every pixel in the image
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            // If the pixel value is above the high threshold, it is marked as a strong edge
+            if (image[i][j] > highThreshold) {
+                result[i][j] = 255;
+            }
+            // If the pixel value is between the low and high thresholds, it is marked as a weak edge
+            else if (image[i][j] > lowThreshold) {
+                result[i][j] = 100; // Different values can be used to represent weak edges
+            }                       // it relate to real application
+            // In other cases, suppress the pixel (keep it at 0)
+        }
+    }
+    return result;
+}
+
+void applyHysteresisImpl(Image& image, int x, int y) {
+    const int rows = image.size();
+    const int cols = image[0].size();
+
+    // Neighbors in the 8 direction
+    const std::vector<std::pair<int, int>> directions = {
+        {-1, -1}, {-1, 0}, {-1, 1},
+        {0, -1},           {0, 1},
+        {1, -1}, {1, 0}, {1, 1}
+    };
+
+    for (const auto& dir : directions) {
+        int newX = x + dir.first;
+        int newY = y + dir.second;
+
+        // Check the boundary conditions
+        if (newX >= 0 && newX < rows && newY >= 0 && newY < cols) {
+            if (image[newX][newY] == 100) { // weak edge
+                image[newX][newY] = 255; // strong edge
+                applyHysteresisImpl(image, newX, newY); // Recursive marking
+            }
+        }
+    }
 }
 
 // Function to apply hysteresis
 Image applyHysteresis(const Image& image) {
     // Implement hysteresis
-    // This is a placeholder implementation
-    return image;
+    Image result = image;
+    const int rows = image.size();
+    const int cols = image[0].size();
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (result[i][j] == 255) { // string edge
+                applyHysteresisImpl(result, i, j); // Recursively marks the weak edges of the connection
+            }
+        }
+    }
+
+    // Set all pixels that are not marked as strong edges to 0
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (result[i][j] != 255) {
+                result[i][j] = 0;
+            }
+        }
+    }
+    return result;
 }
 
 // Main Canny edge detection function
