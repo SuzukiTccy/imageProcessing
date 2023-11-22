@@ -4,6 +4,8 @@
 #include<string>
 #include "../Mytool.h"
 
+#define M_PI 3.14159265358979323846  // the definition of M_PI for windows
+
 using Image = std::vector<std::vector<int>>;
 
 // Helper function to get pixel value with boundary checks
@@ -105,7 +107,7 @@ float bilinearInterpolate(const Image& image, float x, float y) {
 }
 
 // Function for non-maximum suppression
-Image nonMaximumSuppression(const Image& gradientMagnitude, const Image& gradientDirection, const std::string& mode="nearest") {
+Image nonMaximumSuppression(const Image& gradientMagnitude, const Image& gradientDirection, const std::string& mode="bilinear") {
     // Implement non-maximum suppression
     const int rows = gradientMagnitude.size();
     const int cols = gradientMagnitude[0].size();
@@ -115,35 +117,35 @@ Image nonMaximumSuppression(const Image& gradientMagnitude, const Image& gradien
     if(mode == "nearest"){
         for (int i = 1; i < rows - 1; ++i) {
             for (int j = 1; j < cols - 1; ++j) {
-            int q = 255, r = 255;
-            float angle = gradientDirection[i][j]; // radians
+                int q = 255, r = 255;
+                float angle = gradientDirection[i][j]; // radians
 
-            // Find the two adjacent pixels to inspect
-            if ((angle >= -M_PI / 8 && angle <= M_PI / 8) || (angle >= 7 * M_PI / 8 || angle <= -7 * M_PI / 8)) {
-                // Horizontal edge
-                q = gradientMagnitude[i][j + 1];
-                r = gradientMagnitude[i][j - 1];
-            } else if ((angle > M_PI / 8 && angle < 3 * M_PI / 8) || (angle > -7 * M_PI / 8 && angle < -5 * M_PI / 8)) {
-                // Diagonal (top right to bottom left)
-                q = gradientMagnitude[i + 1][j - 1];
-                r = gradientMagnitude[i - 1][j + 1];
-            } else if ((angle >= 3 * M_PI / 8 && angle <= 5 * M_PI / 8) || (angle >= -5 * M_PI / 8 && angle <= -3 * M_PI / 8)) {
-                // Vertical edge
-                q = gradientMagnitude[i + 1][j];
-                r = gradientMagnitude[i - 1][j];
-            } else if ((angle > 5 * M_PI / 8 && angle < 7 * M_PI / 8) || (angle > -3 * M_PI / 8 && angle < -M_PI / 8)) {
-                // Diagonal (top left to bottom right)
-                q = gradientMagnitude[i - 1][j - 1];
-                r = gradientMagnitude[i + 1][j + 1];
-            }
+                // Find the two adjacent pixels to inspect
+                if ((angle >= -M_PI / 8 && angle <= M_PI / 8) || (angle >= 7 * M_PI / 8 || angle <= -7 * M_PI / 8)) {
+                    // Horizontal edge
+                    q = gradientMagnitude[i][j + 1];
+                    r = gradientMagnitude[i][j - 1];
+                } else if ((angle > M_PI / 8 && angle < 3 * M_PI / 8) || (angle > -7 * M_PI / 8 && angle < -5 * M_PI / 8)) {
+                    // Diagonal (top right to bottom left)
+                    q = gradientMagnitude[i + 1][j - 1];
+                    r = gradientMagnitude[i - 1][j + 1];
+                } else if ((angle >= 3 * M_PI / 8 && angle <= 5 * M_PI / 8) || (angle >= -5 * M_PI / 8 && angle <= -3 * M_PI / 8)) {
+                    // Vertical edge
+                    q = gradientMagnitude[i + 1][j];
+                    r = gradientMagnitude[i - 1][j];
+                } else if ((angle > 5 * M_PI / 8 && angle < 7 * M_PI / 8) || (angle > -3 * M_PI / 8 && angle < -M_PI / 8)) {
+                    // Diagonal (top left to bottom right)
+                    q = gradientMagnitude[i - 1][j - 1];
+                    r = gradientMagnitude[i + 1][j + 1];
+                }
 
 
-            // Suppress non-maximum values
-            if (gradientMagnitude[i][j] >= q && gradientMagnitude[i][j] >= r) {
-                result[i][j] = gradientMagnitude[i][j];
-            } else {
-                result[i][j] = 0;
-            }
+                // Suppress non-maximum values
+                if (gradientMagnitude[i][j] >= q && gradientMagnitude[i][j] >= r) {
+                    result[i][j] = gradientMagnitude[i][j];
+                } else {
+                    result[i][j] = 0;
+                }
             }
         }
     }
@@ -160,10 +162,10 @@ Image nonMaximumSuppression(const Image& gradientMagnitude, const Image& gradien
                 float y1 = j - sin(angle);
 
                 // Perform bilinear interpolation
-                if (x0 >= 0 && x0 < rows && y0 >= 0 && y0 < cols) {
+                if (x0 >= 0 && x0 < rows - 1 && y0 >= 0 && y0 < cols - 1) {
                     q = bilinearInterpolate(gradientMagnitude, x0, y0);
                 }
-                if (x1 >= 0 && x1 < rows && y1 >= 0 && y1 < cols) {
+                if (x1 >= 0 && x1 < rows - 1 && y1 >= 0 && y1 < cols - 1) {
                     r = bilinearInterpolate(gradientMagnitude, x1, y1);
                 }
 
