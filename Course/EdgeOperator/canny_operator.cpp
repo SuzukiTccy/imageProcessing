@@ -4,7 +4,9 @@
 #include<string>
 #include "../Mytool.h"
 
+#ifndef M_PI
 #define M_PI 3.14159265358979323846  // the definition of M_PI for windows
+#endif
 
 using Image = std::vector<std::vector<int>>;
 
